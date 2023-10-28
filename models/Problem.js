@@ -58,7 +58,7 @@ const problemSchema = new mongoose.Schema({
     ],
     submissions : {
         type : Number,
-        required : false
+        default : 0
     },
     accuracy : {
         type : Number,

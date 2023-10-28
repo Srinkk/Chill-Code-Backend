@@ -121,7 +121,7 @@ try {
 } catch (error) {
     console.error(error);
 }
-console.log('All temporary files flushed !');
+
 })
 
 
@@ -182,23 +182,40 @@ const createNewProblem = asyncHandler(async(req,res) => {
 // @access Private
 
 const submitProblem = asyncHandler(async(req,res)=>{
-    const { user_id,problem_id} = req.body;
-    const problem = await Problem.findOne({_id : problem_id}).lean().exec();
-    console.log(problem._id);
-    const user =  await User.findOne({_id :user_id}).lean().exec();
-    user.problems.forEach(problem => {
-        console.log(problem.problemId)
-    });
-    // user.problems[0].problemId = problem._id;
-    // user.problems[0].status = "Solved";
-    const updateUser = await user.save();
-    console.log(updateUser);
-     if (updateUser)
-     {
-        res.status(200).json({message:"User Updated "})
-     }
-     
+    const { user_id,problem_id,status} = req.body;
+    if(!user_id || !problem_id || !status)
+    {
+        res.status(400).json({message : "All fields are required"})
+    }
+    const problems = await Problem.findOne({_id : problem_id}).exec();
+    
+    console.log(status);
+    const user =  await User.findOne({_id :user_id}).exec();
+    
+    const problemExists = user.problems.some(problem => problem.problemId.toString()===problems._id.toString())
+    if(problemExists)
+    {
+      user.problems[0].status = status
 
+    }
+    else {
+        // console.log("Problem is not found")
+        const newProblem = {
+            problemId : problems._id,
+            status : status
+        };
+        user.problems.push(newProblem)
+    }
+    try {
+        console.log("Before submissions:",problems.submissions)
+        problems.submissions += 1;
+        await Promise.all([user.save(),problems.save()])
+        console.log("After submissions:",problems.submissions)
+        res.status(200).json(problems);
+      } catch (error) {
+        console.error('Error:', error);
+       
+      }
 })
 
 
@@ -207,6 +224,7 @@ module.exports = {
     getAllProblems,
     createNewProblem,
     submitProblem,
+
     showProblem,
     runProblem,
   

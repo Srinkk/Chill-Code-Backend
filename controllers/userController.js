@@ -1,4 +1,5 @@
 const User = require('../models/User')
+const Problem = require('../models/Problem')
 const asyncHandler = require('express-async-handler')
 const bcrypt = require('bcrypt')
 const { v4: uuidv4 } = require('uuid')
@@ -29,16 +30,6 @@ const getUserId = asyncHandler(async(req,res)=>{
     res.status(200).json (user)
 })
 
-
-
-
-
-
-
-
-
-
-
 // @desc create user
 // @route POST /user
 // @access Private
@@ -67,8 +58,58 @@ const createNewUser = asyncHandler(async(req,res)=>{
         }
 
 })
+//-----------------------------------Custom Functions---------------------------------
+// @desc get solved problems
+//@route POST /user/solved
+//@access Private
+const getSolvedProblems = asyncHandler(async(req,res)=>{
+    const {_id} = req.body;
+    if (!_id)
+    {
+        res.status(400).json({message:"Id is required"})
+    }
+
+    const user = await User.findOne({_id:_id}).exec();
+    const solvedProblems = []
+    for (const problem of user.problems)
+  {
+     if(problem.status === "Solved")
+     {
+        const p_id = problem.problemId;
+        const s_problem = await Problem.findOne({_id : p_id})
+        solvedProblems.push(s_problem)
+     }
+  }
+    res.status(200).json(solvedProblems)
+})
+// @desc get tried problems
+//@route POST /user/tried
+//@access Private
+const getTriedProblems = asyncHandler(async(req,res)=>{
+    const { _id } = req.body;
+    if ( !_id )
+    {
+        res.status(400).json({message:"Id is required"})
+    }
+
+    const user = await User.findOne({_id:_id}).exec();
+    const triedProblems = []
+    for ( const problem of user.problems )
+  {
+     if(problem.status === "Tried")
+     {
+        const p_id = problem.problemId;
+        const t_problem = await Problem.findOne({_id : p_id})
+        triedProblems.push(t_problem)
+     }
+  }
+    res.status(200).json(triedProblems)
+})
+//-----------------------------------------------------------------------------------------
 
 module.exports = {
     createNewUser,
-    getUserId
+    getUserId,
+    getSolvedProblems,
+    getTriedProblems
 }
