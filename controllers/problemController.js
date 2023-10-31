@@ -2,7 +2,7 @@ const Problem = require('../models/Problem')
 const User = require('../models/User')
 const asyncHandler = require('express-async-handler')
 var compiler = require('compilex');
-
+const axios = require('axios')
 
 var options = {stats : true}; 
 compiler.init(options);
@@ -26,6 +26,8 @@ const getAllProblems = asyncHandler(async(req,res)=>{
           {
               return res.status(400).json ({message : 'No Problem Found'})
           }
+          
+  
           res.status(200).json(problems)
 
     } catch(error)
@@ -82,7 +84,7 @@ const runProblem = asyncHandler(async(req,res)=>{
                    }
                    else {
                     console.log("Test Case Failed")
-                    res.status(401).json(data.output)
+                    res.status(202).json(data.output)
                    }
                    
                 }
@@ -133,6 +135,7 @@ try {
 // @access Private
 const showProblem =  asyncHandler(async(req,res)=>{
     const {_id} = req.body
+    console.log(_id)
 
     if(! _id)
     {
@@ -172,7 +175,7 @@ const createNewProblem = asyncHandler(async(req,res) => {
         res.status(201).json({message : `New Problem with id ${id} craeted`})
     }
     else {
-        res.status(400).json({message : 'Invalid user data received'})
+        res.status(400).json({message : 'Invalid data received'})
     }
     
 })
@@ -181,42 +184,77 @@ const createNewProblem = asyncHandler(async(req,res) => {
 // @route POST /problem/submit
 // @access Private
 
-const submitProblem = asyncHandler(async(req,res)=>{
-    const { user_id,problem_id,status} = req.body;
-    if(!user_id || !problem_id || !status)
-    {
-        res.status(400).json({message : "All fields are required"})
+const submitProblem = asyncHandler(async (req, res) => {
+    const { user_id, problem_id, code, language, inputRadio } = req.body;
+    if (!user_id || !problem_id || !code || !language || !inputRadio) {
+      return res.status(400).json({ message: "All fields are required" });
     }
-    const problems = await Problem.findOne({_id : problem_id}).exec();
-    
-    console.log(status);
-    const user =  await User.findOne({_id :user_id}).exec();
-    
-    const problemExists = user.problems.some(problem => problem.problemId.toString()===problems._id.toString())
-    if(problemExists)
-    {
-      user.problems[0].status = status
-
-    }
-    else {
-        // console.log("Problem is not found")
-        const newProblem = {
-            problemId : problems._id,
-            status : status
-        };
-        user.problems.push(newProblem)
-    }
+  
     try {
-        console.log("Before submissions:",problems.submissions)
-        problems.submissions += 1;
-        await Promise.all([user.save(),problems.save()])
-        console.log("After submissions:",problems.submissions)
-        res.status(200).json(problems);
-      } catch (error) {
-        console.error('Error:', error);
-       
+      const problems = await Problem.findOne({ _id: problem_id }).exec();
+      const user = await User.findOne({ _id: user_id }).exec();
+      
+      let status;
+      const response = await axios.post('http://localhost:3500/problem/run', {
+        code: code,
+        language: language,
+        inputRadio: inputRadio,
+        _id: problem_id,
+      });
+  
+      if (response.status === 200) {
+        status = "Solved";
+        console.log("Status:", status);
+      } else {
+        status = "Tried";
+        console.log("Status:", status);
       }
-})
+  
+     
+      const problemExists = user.problems.some((problem) =>
+        problem.problemId.toString() === problems._id.toString()
+      );
+  
+      if (problemExists) {
+        
+        user.problems.forEach((problem) => {
+          if (problem.problemId.toString() === problems._id.toString()) {
+            if(problem.status !== "Solved")
+            {
+                problem.status = status;
+            }
+          }
+        });
+      } else {
+        
+        const newProblem = {
+          problemId: problems._id,
+          status: status,
+        };
+        user.problems.push(newProblem);
+      }
+  
+      
+      console.log("Before submissions:", problems.submissions);
+      problems.submissions += 1;
+      if (status === "Solved") {
+        problems.correct_submissions += 1;
+        console.log("Correct", problems.correct_submissions);
+      }
+      const accuracy =(( problems.correct_submissions/problems.submissions) * 100).toFixed(2);
+      console.log("After submissions:", problems.submissions);
+      console.log("Accuracy",accuracy,"%")
+      problems.accuracy = accuracy
+     
+      await Promise.all([user.save(), problems.save()]);
+  
+      res.status(200).json(problems);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
 
 
 
@@ -224,7 +262,6 @@ module.exports = {
     getAllProblems,
     createNewProblem,
     submitProblem,
-
     showProblem,
     runProblem,
   

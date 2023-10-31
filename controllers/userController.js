@@ -8,55 +8,57 @@ const { v4: uuidv4 } = require('uuid')
 // @desc get user
 // @route POST /user/login
 // @access Private
-const getUserId = asyncHandler(async(req,res)=>{
-    const  { e_mail , password } = req.body
+const getUser = asyncHandler(async(req,res)=>{
+    const  { e_mail, password } = req.body
 
-    if ( !e_mail || !password)
-    {
-        return res.status(400).json({message : "All fields are required"})
+    console.log(e_mail, password)
+
+    if (!e_mail || !password) {
+        return res.status(400).json({'message' : "All fields required."})
     }
 
-    const user = await User.findOne({e_mail : e_mail }).exec()
-    if(!user)
-    {
-        return res.status(400).json({message: "Account not found"})
+    const user = await User.findOne({e_mail : e_mail })
+    if (!user) {
+        return res.status(400).json({'message' : "Incorrect e-mail or password."})
     }
-    const match = await bcrypt.compare(password,user.password)
-    if (!match) 
-    {
-        return res.status(400).json({message : "Password Didn't match"})
 
+    const match = await bcrypt.compare(password, user.password)
+    if (!match) {
+        return res.status(400).json({'message' : "Incorrect e-mail or password."})
     }
-    res.status(200).json (user)
+    return res.status(200).json({user})
 })
 
 // @desc create user
 // @route POST /user
 // @access Private
 const createNewUser = asyncHandler(async(req,res)=>{
-    const { userId, password, name ,e_mail} = req.body;
+    const { e_mail, password } = req.body
 
-    if( !userId || !password || !name) {
-        res.json({message : "All fields are required"});
+    if(!e_mail) {
+        return res.status(400).json({ message : "E-mail cannot be blank."});
     }
-    const dup_id = await User.findOne({e_mail}).lean().exec()
-    if(dup_id)
+    if (!password) {
+        return res.status(400).json({ message : "Password cannot be blank."})
+    }
+
+    console.log(e_mail, password)
+
+    const dup_user = await User.findOne({e_mail}).lean().exec()
+    if(dup_user)
     {
-        res.json({message : "This email already exists"});
+        return res.status(400).json({ message : "This email already exists"});
     }
        
-        const hashPwd = await bcrypt.hash(password, 10);
-        const newUser = {name, e_mail,userId,password:hashPwd}
-        const userAdded = await User.create(newUser)
+    const hashPwd = await bcrypt.hash(password, 10);
+    const newUser = {e_mail, username: e_mail, password: hashPwd}
+    const userAdded = await User.create(newUser)
 
-        if(userAdded)
-        {   await userAdded.save();
-            res.status(200).json({message : "New User Created"});
-        }
-        else {
-            res.status (400).json ({message : "Cannot create new user"});
-        }
-
+    if(userAdded) {  
+        return res.status(200).json({message : "New User Created", 'user': userAdded});
+    } else {
+        return res.status(400).json ({message : "Cannot create new user"});
+    }
 })
 //-----------------------------------Custom Functions---------------------------------
 // @desc get solved problems
@@ -66,21 +68,20 @@ const getSolvedProblems = asyncHandler(async(req,res)=>{
     const {_id} = req.body;
     if (!_id)
     {
-        res.status(400).json({message:"Id is required"})
+        return res.status(400).json({message: "Id is required"})
     }
 
     const user = await User.findOne({_id:_id}).exec();
     const solvedProblems = []
-    for (const problem of user.problems)
-  {
-     if(problem.status === "Solved")
-     {
-        const p_id = problem.problemId;
-        const s_problem = await Problem.findOne({_id : p_id})
-        solvedProblems.push(s_problem)
-     }
-  }
-    res.status(200).json(solvedProblems)
+    for (const problem of user.problems) {
+        if(problem.status === "Solved")
+        {
+            const p_id = problem.problemId;
+            const s_problem = await Problem.findOne({_id : p_id})
+            solvedProblems.push(s_problem)
+        }
+    }
+    return res.status(200).json(solvedProblems)
 })
 // @desc get tried problems
 //@route POST /user/tried
@@ -96,20 +97,24 @@ const getTriedProblems = asyncHandler(async(req,res)=>{
     const triedProblems = []
     for ( const problem of user.problems )
   {
-     if(problem.status === "Tried")
+     if(problem.status === "Tried" )
      {
         const p_id = problem.problemId;
         const t_problem = await Problem.findOne({_id : p_id})
         triedProblems.push(t_problem)
      }
   }
+    if (!triedProblems?.length)
+    {
+        res.status(201).json({message: "You haven't tried any problem"})
+    }
     res.status(200).json(triedProblems)
 })
 //-----------------------------------------------------------------------------------------
 
 module.exports = {
     createNewUser,
-    getUserId,
+    getUser,
     getSolvedProblems,
     getTriedProblems
 }

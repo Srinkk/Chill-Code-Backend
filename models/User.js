@@ -3,17 +3,13 @@ const Problem = require('./Problem');
 
 
 const userSchema = new mongoose.Schema({
-    userId:{
-        type : "String",
-        required: true
-    },
     password : {
         type : "String",
         required : true
     },
-    name : {
+    username : {
         type : "String",
-        required : true
+        required: true
     },
     e_mail :{
         type :String,
@@ -30,11 +26,33 @@ const userSchema = new mongoose.Schema({
                 type : String,
                 default : "Unsolved"
             }
-
         }
-    ]
-
-    
+    ],
+    rating: {
+        type: Number,
+        required: true
+    },
+    solvedProblems: {
+        hard: {
+            type: Number,
+            required: true
+        },
+        medium: {
+            type: Number,
+            required: true
+        },
+        easy: {
+            type: Number,
+            required: true
+        },
+        problems: [{
+            type: mongoose.Schema.Types.ObjectId
+        }]
+    },
+    streak: {
+        type: Number,
+        required: true
+    }
 
     
 

@@ -1,9 +1,8 @@
 const mongoose = require('mongoose')
 
-
 const problemSchema = new mongoose.Schema({
     id : {
-        type : "String",
+        type : String,
         required : true
     },
     title : {
@@ -11,10 +10,6 @@ const problemSchema = new mongoose.Schema({
         required : true
     },
     category : {
-        type : String,
-        required : true
-    },
-    difficulty : {
         type : String,
         required : true
     },
@@ -26,23 +21,20 @@ const problemSchema = new mongoose.Schema({
         type : String,
         required : true
     },
-    examples : [
-        {
-          "input": {
-            type: "String",
-            required: true
-          },
-          "output": {
-            type: "String",
-            required: true
-          },
-          "explanation": {
-            type: "String",
-            required: false
-          }
+    examples : [{
+        "input" : {
+            type : String,
+            required : true
+        } ,
+        "output" : {
+            type : String,
+            required : true
+        },
+        "explanation" :{
+            type : String,
+            required : true
         } 
-    ],
-      
+    }],
     testcase :[
         {
             "input": {
@@ -67,11 +59,12 @@ const problemSchema = new mongoose.Schema({
     accuracy : {
         type : Number,
         default : 0
+    },
+    status :{
+        type : String,
+        default : "Not Selected"
     }
-    // judgingCode : {
-    //     type : String,
-    //     required : true
-    // }   
+
 })
 
-module.exports = mongoose.model('Problem',problemSchema)
+module.exports = mongoose.model('ProblemOfTheDay',problemSchema)
