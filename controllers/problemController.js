@@ -3,7 +3,7 @@ const User = require('../models/User')
 const asyncHandler = require('express-async-handler')
 var compiler = require('compilex');
 const axios = require('axios')
-
+const ProblemOfTheDay = require('../models/POTD')
 var options = {stats : true}; 
 compiler.init(options);
 
@@ -41,18 +41,28 @@ const getAllProblems = asyncHandler(async(req,res)=>{
 // @route POST /problem/run
 // @access Private
 
-const runProblem = asyncHandler(async(req,res)=>{
-    const {_id,code,language,inputRadio} = req.body
-    const problem  = await Problem.findOne({_id:_id}).exec()
 
+const runProblem = asyncHandler(async(req,res)=>{
+    const {_id,code,language} = req.body
+    if(!_id )
+    {
+      res.status(401).json({message: 'All fields are required'})
+    }
+    const problem  = await Problem.findOne({_id:_id}).exec()
+    if(!problem?.length)
+    {
+      console.log("No problem found")
+    }
+    const inputRadio = problem.inputRadio
     if (!language)
     {
-        language  = 'c++'
+        language  = 'cpp'
     }
     for (const testCase of problem.testcase)
     {
-        const input = testCase.input
-        const expectedOutput = testCase.output
+        const input =(testCase.input)
+        const expectedOutput = (testCase.output)
+        console.log("Input:",input)
         // const input = testValues.split(',').filter(value => value.trim() !== '')
     
     if(!input?.length || !expectedOutput?.length)
@@ -66,9 +76,9 @@ const runProblem = asyncHandler(async(req,res)=>{
     console.log("code: ",code)
     console.log("input",inputRadio)
 
-    if(language === 'c' || language === 'c++')
+    if(inputRadio === "true")
     {
-      if(inputRadio === "true")
+      if(language === 'c' || language === 'cpp')
       {
           var envData = { OS : "windows" , cmd : "g++", options : {timeout : 10000} };
           
@@ -78,9 +88,9 @@ const runProblem = asyncHandler(async(req,res)=>{
                   res.status(400).json({error: data.error});
                 }
                 else {
-                    if (data.output === expectedOutput){ 
+                    if ((data.output) === expectedOutput){ 
                     console.log("Test Case Passed")
-                    res.status(200).json(data.output)
+                    res.status(200).json((data.output))
                    }
                    else {
                     console.log("Test Case Failed")
@@ -91,8 +101,51 @@ const runProblem = asyncHandler(async(req,res)=>{
           });
         
       }
-      else {
-          var envData = { OS : "windows" , cmd : "g++", options : {timeout : 10000}};
+      else if(language === 'java')
+      {
+        var envData = { OS : "windows",options : {timeout : 10000}}; 
+        compiler.compileJavaWithInput( envData , code , input ,  function(data){
+          if(data.error) {
+            res.status(400).json({error: data.error});
+          }
+          else {
+              if ((data.output) === expectedOutput){ 
+              console.log("Test Case Passed")
+              res.status(200).json((data.output))
+             }
+             else {
+              console.log("Test Case Failed")
+              res.status(202).json(data.output)
+             }
+             
+          }
+      });
+      }
+      else if (language === 'python')
+      {
+        var envData = { OS : "windows",options : {timeout : 10000}};
+        compiler.compilePythonWithInput( envData , code , input ,  function(data){
+          if(data.error) {
+            res.status(400).json({error: data.error});
+          }
+          else {
+              if ((data.output) === expectedOutput){ 
+              console.log("Test Case Passed")
+              res.status(200).json((data.output))
+             }
+             else {
+              console.log("Test Case Failed")
+              res.status(202).json(data.output)
+             }
+             
+          }
+      });
+      }
+      
+    }
+    else {
+      if(language === 'c' || language === 'cpp')
+          {var envData = { OS : "windows" , cmd : "g++", options : {timeout : 10000}};
           compiler.compileCPP(envData, code, function(data){
             if(data.error){
               console.log(data.error);
@@ -111,9 +164,49 @@ const runProblem = asyncHandler(async(req,res)=>{
             }
           }); 
       }
+      else if(language === 'java')
+      {
+        var envData = { OS : "windows",options : {timeout : 10000}}; 
+        compiler.compileJava( envData , code , input ,  function(data){
+          if(data.error) {
+            res.status(400).json({error: data.error});
+          }
+          else {
+              if ((data.output) === expectedOutput){ 
+              console.log("Test Case Passed")
+              res.status(200).json((data.output))
+             }
+             else {
+              console.log("Test Case Failed")
+              res.status(202).json(data.output)
+             }
+             
+          }
+      });
+      }
+      else if(language === 'python')
+      {
+        var envData = { OS : "windows",options : {timeout : 10000}}; 
+        compiler.compilePython( envData , code , input ,  function(data){
+          if(data.error) {
+            res.status(400).json({error: data.error});
+          }
+          else {
+              if ((data.output) === expectedOutput){ 
+              console.log("Test Case Passed")
+              res.status(200).json((data.output))
+             }
+             else {
+              console.log("Test Case Failed")
+              res.status(202).json(data.output)
+             }
+             
+          }
+      });
+      }
+    }
+     
     }   
-    
-}
 
 try {
     const fullStatData = await new Promise((resolve) => {
@@ -123,8 +216,10 @@ try {
 } catch (error) {
     console.error(error);
 }
-
 })
+compiler.flush(function(){
+  console.log('All temporary files flushed !'); 
+  });
 
 
 
@@ -154,7 +249,8 @@ const showProblem =  asyncHandler(async(req,res)=>{
 // @route POST /problem
 // @access Private
 const createNewProblem = asyncHandler(async(req,res) => {
-    const { _id, id, title, category, difficulty, company, desc, example, testcase } = req.body
+    const { _id, id, title, category, difficulty, company, desc, inputRadio, examples, testcase } = req.body
+    console.log(inputRadio)
 
     if( ! id)
     {
@@ -167,7 +263,7 @@ const createNewProblem = asyncHandler(async(req,res) => {
         return res.status(409).json({message : "Duplicate Id"})
     }
 
-    const problemObject = { _id, id, title, category, difficulty, company, desc, example, testcase }
+    const problemObject = { _id, id, title, category, difficulty, company,inputRadio, desc, examples, testcase }
     const problem = await Problem.create(problemObject)
 
     if(problem)
@@ -185,61 +281,118 @@ const createNewProblem = asyncHandler(async(req,res) => {
 // @access Private
 
 const submitProblem = asyncHandler(async (req, res) => {
-    const { user_id, problem_id, code, language, inputRadio } = req.body;
-    if (!user_id || !problem_id || !code || !language || !inputRadio) {
+    const { user_id, problem_id, code, language} = req.body;
+    if (!user_id || !problem_id || !code || !language ) {
       return res.status(400).json({ message: "All fields are required" });
     }
   
     try {
       const problems = await Problem.findOne({ _id: problem_id }).exec();
       const user = await User.findOne({ _id: user_id }).exec();
+      const potd = await axios.get('http://localhost:3500/problemOfTheDay')
+      const potd_id = potd.id
+      console.log(user)
       
       let status;
       const response = await axios.post('http://localhost:3500/problem/run', {
         code: code,
         language: language,
-        inputRadio: inputRadio,
+        inputRadio: problems.inputRadio,
         _id: problem_id,
       });
   
       if (response.status === 200) {
         status = "Solved";
+        if(potd_id === problems.id)
+        {
+          problems.streak += 1;
+          console.log("Streak",problems.streak)
+        }
+       
         console.log("Status:", status);
       } else {
         status = "Tried";
         console.log("Status:", status);
       }
+
   
-     
-      const problemExists = user.problems.some((problem) =>
+      const problemExists = user.solvedProblems.problems.some((problem) =>
         problem.problemId.toString() === problems._id.toString()
       );
-  
       if (problemExists) {
         
-        user.problems.forEach((problem) => {
+        user.solvedProblems.problems.forEach((problem) => {
           if (problem.problemId.toString() === problems._id.toString()) {
-            if(problem.status !== "Solved")
+            for(const solution of problem.solution)
             {
-                problem.status = status;
+              if(language === 'cpp')
+              {
+                solution.cpp = code
+              }
+              else if(language === 'java')
+              {
+                solution.java = code
+              }
+              else {
+                solution.python = code
+              }
             }
           }
-        });
-      } else {
-        
-        const newProblem = {
-          problemId: problems._id,
-          status: status,
-        };
-        user.problems.push(newProblem);
+        })
+      } 
+    else {
+    if(language === 'cpp')
+   { 
+    const newProblem = {
+      problemId: problems._id,
+      solution : [
+       {
+         "c++" : code
+       }
+      ]
+    }
+    user.solvedProblems.problems.push(newProblem);
+  }
+    else if(language === 'python')
+    {
+      const newProblem = {
+        problemId: problems._id,
+        solution : [
+         {
+           "python" : code
+         }
+        ]
       }
-  
-      
+      user.solvedProblems.problems.push(newProblem);
+    }
+    else {
+      const newProblem = {
+        problemId: problems._id,
+        solution : [
+         {
+           "java" : code
+         }
+        ]
+      }
+      user.solvedProblems.problems.push(newProblem);
+    }
+  } 
       console.log("Before submissions:", problems.submissions);
       problems.submissions += 1;
       if (status === "Solved") {
         problems.correct_submissions += 1;
         console.log("Correct", problems.correct_submissions);
+      }
+      if(problems.difficulty === "Easy")
+      {
+        user.solvedProblems.easy++
+      }
+      else if(problems.difficulty === "Medium")
+      {
+        user.solvedProblems.medium++
+      }
+      else {
+        user.solvedProblems.hard ++
       }
       const accuracy =(( problems.correct_submissions/problems.submissions) * 100).toFixed(2);
       console.log("After submissions:", problems.submissions);
@@ -247,6 +400,7 @@ const submitProblem = asyncHandler(async (req, res) => {
       problems.accuracy = accuracy
      
       await Promise.all([user.save(), problems.save()]);
+      
   
       res.status(200).json(problems);
     } catch (error) {
@@ -255,9 +409,6 @@ const submitProblem = asyncHandler(async (req, res) => {
     }
   });
   
-
-
-
 module.exports = {
     getAllProblems,
     createNewProblem,
@@ -265,7 +416,6 @@ module.exports = {
     showProblem,
     runProblem,
   
-   
 }
 
 

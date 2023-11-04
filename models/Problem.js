@@ -3,7 +3,7 @@ const mongoose = require('mongoose')
 
 const problemSchema = new mongoose.Schema({
     id : {
-        type : "String",
+        type : String,
         required : true
     },
     title : {
@@ -26,31 +26,36 @@ const problemSchema = new mongoose.Schema({
         type : String,
         required : true
     },
+    inputRadio :{
+        type : String,
+        default : "false"
+    },
     examples : [
         {
           "input": {
-            type: "String",
+            type: String,
             required: true
           },
           "output": {
-            type: "String",
+            type: String,
             required: true
           },
           "explanation": {
-            type: "String",
+            type: String,
             required: false
           }
         } 
     ],
+
       
     testcase :[
         {
             "input": {
-                type: "String",
+                type: String,
                 required: true       
             },
              "output":{
-               type: "String",
+               type: String,
                required : true
              }
         }
@@ -67,6 +72,10 @@ const problemSchema = new mongoose.Schema({
     accuracy : {
         type : Number,
         default : 0
+    },
+    hasBeenPotd : {
+        type :Boolean,
+        default : false
     }
     // judgingCode : {
     //     type : String,

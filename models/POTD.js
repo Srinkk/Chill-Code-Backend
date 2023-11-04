@@ -9,11 +9,19 @@ const problemSchema = new mongoose.Schema({
         type : String,
         required : true
     },
+    inputRadio :{
+        type : String,
+        default : "false"
+    },
     category : {
         type : String,
         required : true
     },
     company : {
+        type : String,
+        required : true
+    },
+    difficulty: {
         type : String,
         required : true
     },
@@ -60,9 +68,9 @@ const problemSchema = new mongoose.Schema({
         type : Number,
         default : 0
     },
-    status :{
+    status:{
         type : String,
-        default : "Not Selected"
+        default : 'Selected'
     }
 
 })

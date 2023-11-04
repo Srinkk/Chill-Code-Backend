@@ -60,6 +60,35 @@ const createNewUser = asyncHandler(async(req,res)=>{
         return res.status(400).json ({message : "Cannot create new user"});
     }
 })
+// @desc update user
+// @route PATCH /user
+// @access Private
+const editProfile = asyncHandler(async(req,res)=>{
+    const { _id, e_mail, username } = req.body
+    if(!_id || !e_mail || !username)
+    {
+        res.status(400).json({message : 'All fields are required'})
+    }
+    const user = await User.findOne({_id : _id}).exec()
+    
+    if(!user)
+    {
+        res.status(400).json({message : 'No user exists with this Id'})
+    }
+
+    user.username = username 
+    user.e_mail = e_mail
+    const updateUser = await user.save()
+
+    if(updateUser)
+    {
+        res.status(200).json(updateUser)
+    }
+    else {
+        res.status(400).json({message : "Some Error Occured to update the user"})
+    }
+
+})
 //-----------------------------------Custom Functions---------------------------------
 // @desc get solved problems
 //@route POST /user/solved
@@ -116,5 +145,6 @@ module.exports = {
     createNewUser,
     getUser,
     getSolvedProblems,
-    getTriedProblems
+    getTriedProblems,
+    editProfile
 }
