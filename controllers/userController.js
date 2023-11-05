@@ -3,7 +3,10 @@ const Problem = require('../models/Problem')
 const asyncHandler = require('express-async-handler')
 const bcrypt = require('bcrypt')
 const { v4: uuidv4 } = require('uuid')
+const jwt = require('jsonwebtoken')
+const cookieParser = require('cookie-parser');
 
+const SECRET_KEY = `fJI^,Luxabd*1^2wtYS5{{J0qFlH2^iQvm{EV:H-+heE0Cny"YfVj_~kK1H7sGY,S{BA@FQ,n]^zzy~?;:}WY2V&wqM63FSaVWsCBJS89jKoYxZ66rKN1qMEaV3pelFOnIwWCj3zYQ6E9GAaKq08`
 
 // @desc get user
 // @route POST /user/login
@@ -11,13 +14,11 @@ const { v4: uuidv4 } = require('uuid')
 const getUser = asyncHandler(async(req,res)=>{
     const  { e_mail, password } = req.body
 
-    console.log(e_mail, password)
-
     if (!e_mail || !password) {
         return res.status(400).json({'message' : "All fields required."})
     }
 
-    const user = await User.findOne({e_mail : e_mail })
+    const user = await User.findOne({e_mail : e_mail})
     if (!user) {
         return res.status(400).json({'message' : "Incorrect e-mail or password."})
     }
@@ -26,7 +27,48 @@ const getUser = asyncHandler(async(req,res)=>{
     if (!match) {
         return res.status(400).json({'message' : "Incorrect e-mail or password."})
     }
-    return res.status(200).json({user})
+
+    const token = jwt.sign({userId: user._id}, SECRET_KEY, {expiresIn: '1m'})  
+    res.cookie('jwt', token, { httpOnly: true, secure: false })
+    return res.status(200).json({user, token})
+})
+
+const googleSignIn = asyncHandler(async(req, res) => {
+    const { email, email_verified } = req.body
+
+    if (!email_verified) {
+        return res.status(400).json({message: 'Email verification failed.'})
+    }
+    if (!email) {
+        return res.status(400).json({message: 'Email id not found.'})
+    }
+
+    const user = await User.findOne({ e_mail: email })
+    if (user) {
+        const token = jwt.sign({userId: user._id}, SECRET_KEY, {expiresIn: '1m'})  
+        res.cookie('jwt', token, { httpOnly: true, secure: false })
+        return res.status(200).json({user, token})
+    } else {
+        return res.status(400).json({message: 'Sign up is required for a new account.'})
+    }
+})
+
+const autoLogin = asyncHandler(async(req, res) => {
+    const token = req.cookies.jwt
+
+    try {
+        const decoded = jwt.verify(token, SECRET_KEY)
+        const userId = decoded.userId
+
+        const user = await User.findById(userId)
+        if (!user) {
+            return res.status(400).json({ message: 'User not found.' })
+        } else {
+            return res.status(200).json({user})
+        }
+    } catch (error) {
+        return res.status(400).json({ message: 'User not authorized.' })
+    }
 })
 
 // @desc create user
@@ -51,11 +93,25 @@ const createNewUser = asyncHandler(async(req,res)=>{
     }
        
     const hashPwd = await bcrypt.hash(password, 10);
-    const newUser = {e_mail, username: e_mail, password: hashPwd}
-    const userAdded = await User.create(newUser)
+    const newUser = {
+        e_mail, 
+        username: e_mail, 
+        password: hashPwd, 
+        rating: 0, 
+        streak: 0, 
+        solvedProblems: {
+            hard: 0,
+            medium: 0,
+            easy: 0,
+            problems: []
+        }
+    }
+    const user = await User.create(newUser)
 
-    if(userAdded) {  
-        return res.status(200).json({message : "New User Created", 'user': userAdded});
+    if(user) {  
+        const token = jwt.sign({userId: user._id}, SECRET_KEY, {expiresIn: '1m'})  
+        res.cookie('jwt', token, { httpOnly: true, secure: false })
+        return res.status(200).json({message : "New User Created", user, token});
     } else {
         return res.status(400).json ({message : "Cannot create new user"});
     }
@@ -115,6 +171,8 @@ const getTriedProblems = asyncHandler(async(req,res)=>{
 module.exports = {
     createNewUser,
     getUser,
+    autoLogin,
+    googleSignIn,
     getSolvedProblems,
     getTriedProblems
 }

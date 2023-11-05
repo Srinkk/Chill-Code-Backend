@@ -4,10 +4,17 @@ const userController =require ( '../controllers/userController')
 
 router.route('/')
     .post(userController.createNewUser)
+
 router.route('/login')
     .post(userController.getUser)
+    .get(userController.autoLogin)
+
+router.route('/googleauth')
+    .post(userController.googleSignIn)
+
 router.route('/solved')
     .post(userController.getSolvedProblems)
+
 router.route('/tried')
     .post(userController.getTriedProblems)
     

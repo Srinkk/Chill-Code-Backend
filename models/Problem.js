@@ -18,10 +18,10 @@ const problemSchema = new mongoose.Schema({
         type : String,
         required : true
     },
-    company : {
+    company : [{
         type : String,
         required : true
-    },
+    }],
     desc : {
         type : String,
         required : true
