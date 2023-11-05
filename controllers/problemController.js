@@ -43,13 +43,13 @@ const getAllProblems = asyncHandler(async(req,res)=>{
 
 
 const runProblem = asyncHandler(async(req,res)=>{
-    const {_id,code,language} = req.body
+    const { _id, code, language } = req.body
     if(!_id )
     {
       res.status(401).json({message: 'All fields are required'})
     }
-    const problem  = await Problem.findOne({_id:_id}).exec()
-    if(!problem)
+    const problem  = await Problem.findOne({ _id:_id }).exec()
+    if( !problem )
     {
       console.log("No problem found")
     }
@@ -69,20 +69,14 @@ const runProblem = asyncHandler(async(req,res)=>{
     {
         res.status(400).json ({message : "No data found"})
     }
-    // res.status(200).json({message : "Success"})
-    console.log("Input" ,input)
+   
     console.log("Expected Output",expectedOutput)
     console.log("Language" , language)
     console.log("code: ",code)
     console.log("input",inputRadio)
 
-    if(inputRadio === "true")
-    {
-      if(language === 'c' || language === 'cpp')
-      {
+      if(language === 'c' || language === 'cpp') {
           var envData = { OS : "windows" , cmd : "g++", options : {timeout : 10000} };
-          
-          
           compiler.compileCPPWithInput(envData, code, input, function(data){
               if(data.error) {
                   res.status(400).json({error: data.error});
@@ -95,11 +89,10 @@ const runProblem = asyncHandler(async(req,res)=>{
                    else {
                     console.log("Test Case Failed")
                     res.status(202).json(data.output)
-                   }
-                   
+                   } 
                 }
-          });
-        
+            }
+          ) 
       }
       else if(language === 'java')
       {
@@ -116,10 +109,10 @@ const runProblem = asyncHandler(async(req,res)=>{
              else {
               console.log("Test Case Failed")
               res.status(202).json(data.output)
+                }
              }
-             
           }
-      });
+        )
       }
       else if (language === 'python')
       {
@@ -139,74 +132,10 @@ const runProblem = asyncHandler(async(req,res)=>{
              }
              
           }
-      });
-      }
-      
-    }
-    else {
-      if(language === 'c' || language === 'cpp')
-          {var envData = { OS : "windows" , cmd : "g++", options : {timeout : 10000}};
-          compiler.compileCPP(envData, code, function(data){
-            if(data.error){
-              console.log(data.error);
-              res.send(data.error);
-            } 
-            else {
-                if (data.output === expectedOutput){ 
-                console.log("Output Matched :",data.output)
-                res.status(200).json(data.output)
-               }
-               else {
-                console.log("Output not matched:",data.output)
-                res.status(201).json(data.output)
-               }
-               
-            }
-          }); 
-      }
-      else if(language === 'java')
-      {
-        var envData = { OS : "windows",options : {timeout : 10000}}; 
-        compiler.compileJava( envData , code , input ,  function(data){
-          if(data.error) {
-            res.status(400).json({error: data.error});
-          }
-          else {
-              if ((data.output) === expectedOutput){ 
-              console.log("Test Case Passed")
-              res.status(200).json((data.output))
-             }
-             else {
-              console.log("Test Case Failed")
-              res.status(202).json(data.output)
-             }
-             
-          }
-      });
-      }
-      else if(language === 'python')
-      {
-        var envData = { OS : "windows",options : {timeout : 10000}}; 
-        compiler.compilePython( envData , code , input ,  function(data){
-          if(data.error) {
-            res.status(400).json({error: data.error});
-          }
-          else {
-              if ((data.output) === expectedOutput){ 
-              console.log("Test Case Passed")
-              res.status(200).json((data.output))
-             }
-             else {
-              console.log("Test Case Failed")
-              res.status(202).json(data.output)
-             }
-             
-          }
-      });
-      }
-    }
-     
-    }   
+        }
+      )
+    } 
+  }   
 
 try {
     const fullStatData = await new Promise((resolve) => {
