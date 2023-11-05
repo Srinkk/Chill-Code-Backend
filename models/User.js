@@ -1,45 +1,23 @@
 const mongoose =  require('mongoose');
 const Problem = require('./Problem');
 
-
 const userSchema = new mongoose.Schema({
     password : {
-        type : "String",
+        type : String,
         required : true
     },
     username : {
-        type : "String",
+        type : String,
         required: true
     },
     e_mail :{
         type :String,
         required : true
     },
-    // problems : [
-    //     {
-    //         problemId : {
-    //             type : mongoose.Schema.Types.ObjectId,
-    //             ref : Problem,
-    //             required : true
-    //         },
-    //         status : {
-    //             type : String,
-    //             default : "Unsolved"
-    //         },
-    //         language: {
-    //             type : String,
-    //             default : 'c++'
-    //         },
-    //         code : {
-    //             type : String,
-    //             required : true
-    //         }
-    //     }
-    // ],
-    // rating: {
-    //     type: Number,
-    //     required: true
-    // },
+    rating: {
+        type: Number,
+        required: true
+    },
     solvedProblems: {
         hard: {
             type: Number,
@@ -75,8 +53,7 @@ const userSchema = new mongoose.Schema({
              }
            }]
         }
-    ]
-    },
+    ]},
     streak: {
         type: Number,
         default : 0
@@ -84,10 +61,6 @@ const userSchema = new mongoose.Schema({
     last_potd : {
         type : Date
     }
-
-
-    
-
 })
 
 module.exports = mongoose.model ('User',userSchema)
