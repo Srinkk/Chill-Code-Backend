@@ -50,12 +50,12 @@ const getPotd =asyncHandler(async(req,res)=>{
           if( problemOfTheDayAdded)
           {
               problemOfTheDay[0].hasBeenPotd = true
-              const twentyFourHoursInMilliseconds = 2 * 60 * 1000;
+              const twentyFourHoursInMilliseconds = 24 * 60 * 60 * 1000;
               setTimeout(async () => {
                   await ProblemOfTheDay.deleteOne({ _id: p_id });
               }, twentyFourHoursInMilliseconds);
               await problemOfTheDay[0].save()
-              return res.status(200).json(problemOfTheDayAdded)
+              return res.status(200).json(problemOfTheDay)
               
           }
           else {

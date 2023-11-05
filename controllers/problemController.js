@@ -49,7 +49,7 @@ const runProblem = asyncHandler(async(req,res)=>{
       res.status(401).json({message: 'All fields are required'})
     }
     const problem  = await Problem.findOne({_id:_id}).exec()
-    if(!problem?.length)
+    if(!problem)
     {
       console.log("No problem found")
     }
@@ -62,7 +62,7 @@ const runProblem = asyncHandler(async(req,res)=>{
     {
         const input =(testCase.input)
         const expectedOutput = (testCase.output)
-        console.log("Input:",input)
+       
         // const input = testValues.split(',').filter(value => value.trim() !== '')
     
     if(!input?.length || !expectedOutput?.length)
@@ -290,8 +290,8 @@ const submitProblem = asyncHandler(async (req, res) => {
       const problems = await Problem.findOne({ _id: problem_id }).exec();
       const user = await User.findOne({ _id: user_id }).exec();
       const potd = await axios.get('http://localhost:3500/problemOfTheDay')
-      const potd_id = potd.id
-      console.log(user)
+      const potd_id = potd.data._id
+      console.log("potd",potd.data)
       
       let status;
       const response = await axios.post('http://localhost:3500/problem/run', {
@@ -303,10 +303,11 @@ const submitProblem = asyncHandler(async (req, res) => {
   
       if (response.status === 200) {
         status = "Solved";
-        if(potd_id === problems.id)
+        is_potd = potd_id.toString() === problems._id.toString()
+        if(is_potd)
         {
-          problems.streak += 1;
-          console.log("Streak",problems.streak)
+          user.streak += 1;
+          console.log("Streak",user.streak)
         }
        
         console.log("Status:", status);
