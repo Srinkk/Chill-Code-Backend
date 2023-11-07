@@ -200,14 +200,24 @@ try {
   const potd_id = potd.data._id
   console.log("potd",potd.data)
   
-  let status, compileError;
+  let status, resStatus, resMessage, resOutput;
   
   const response = await axios.post('http://localhost:3500/problem/run', {
     code: code,
     language: language,
     inputRadio: problem.inputRadio,
     _id: problem_id,
-  }).catch((error) => {
+  })
+  .then((res) => {
+    resStatus = res.status
+    resMessage = res.message
+    resOutput = res.output
+    if (resStatus === 200)
+      return res.status(201).json({output: resOutput, message: 'Answer Accepted!'})
+    else if (resStatus === 202) 
+      return res.status(202).json({output: resOutput, message: resMessage})
+  })
+  .catch((error) => {
     return res.status(400).json({error: error.response.data.error})
   })
   
@@ -306,12 +316,11 @@ else {
   problem.accuracy = accuracy
  
   await Promise.all([user.save(), problem.save()]);
-  
-  if (response.status === 200) {
-    return res.status(201).json({message: 'Answer accepted!'});
-  } else if (response.status === 202) {
-    return res.status(202).json(response.data)
-  }
+
+  // if (resStatus === 200)
+  //   return res.status(201).json({output: resOutput, message: resMessage})
+  // else if (resStatus === 202) 
+  //   return res.status(202).json({output: resOutput, message: resMessage})
 
 } catch (error) {
   return res.status(500).json({ message: "Internal server error" });
