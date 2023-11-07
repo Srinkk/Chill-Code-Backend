@@ -21,6 +21,7 @@ const getAllProblems = asyncHandler(async(req,res)=>{
 		if ( !problems?.length ) {
 			return res.status(400).json ({message : 'No Problem Found'})
 		}
+    // console.log(problems)
 		return res.status(200).json({problems})
     } catch(error) {
         return res.status(500).json({message : "Server Error"});
@@ -33,7 +34,7 @@ const getAllProblems = asyncHandler(async(req,res)=>{
 // @access Private
 
 const runProblem = asyncHandler(async(req,res)=>{
-    const {_id,code,language} = req.body
+    const {_id, code, language} = req.body
     if(!_id )
     {
       res.status(401).json({message: 'All fields are required'})
@@ -66,15 +67,13 @@ const runProblem = asyncHandler(async(req,res)=>{
     console.log("code: ",code)
     console.log("input",inputRadio)
 
-    if(inputRadio === "true")
-    {
+   
       if(language === 'c' || language === 'cpp')
       {
           var envData = { OS : "windows" , cmd : "g++", options : {timeout : 10000} };
-          
-          
           compiler.compileCPPWithInput(envData, code, input, function(data){
               if(data.error) {
+                  console.log(data.error)
                   res.status(400).json({error: data.error});
                 }
                 else {
@@ -89,7 +88,6 @@ const runProblem = asyncHandler(async(req,res)=>{
                    
                 }
           });
-        
       }
       else if(language === 'java')
       {
@@ -111,7 +109,7 @@ const runProblem = asyncHandler(async(req,res)=>{
           }
       });
       }
-      else if (language === 'python')
+      else 
       {
         var envData = { OS : "windows",options : {timeout : 10000}};
         compiler.compilePythonWithInput( envData , code , input ,  function(data){
@@ -132,71 +130,7 @@ const runProblem = asyncHandler(async(req,res)=>{
       });
       }
       
-    }
-    else {
-      if(language === 'c' || language === 'cpp')
-          {var envData = { OS : "windows" , cmd : "g++", options : {timeout : 10000}};
-          compiler.compileCPP(envData, code, function(data){
-            if(data.error){
-              console.log(data.error);
-              res.send(data.error);
-            } 
-            else {
-                if (data.output === expectedOutput){ 
-                console.log("Output Matched :",data.output)
-                res.status(200).json(data.output)
-               }
-               else {
-                console.log("Output not matched:",data.output)
-                res.status(201).json(data.output)
-               }
-               
-            }
-          }); 
-      }
-      else if(language === 'java')
-      {
-        var envData = { OS : "windows",options : {timeout : 10000}}; 
-        compiler.compileJava( envData , code , input ,  function(data){
-          if(data.error) {
-            res.status(400).json({error: data.error});
-          }
-          else {
-              if ((data.output) === expectedOutput){ 
-              console.log("Test Case Passed")
-              res.status(200).json((data.output))
-             }
-             else {
-              console.log("Test Case Failed")
-              res.status(202).json(data.output)
-             }
-             
-          }
-      });
-      }
-      else if(language === 'python')
-      {
-        var envData = { OS : "windows",options : {timeout : 10000}}; 
-        compiler.compilePython( envData , code , input ,  function(data){
-          if(data.error) {
-            res.status(400).json({error: data.error});
-          }
-          else {
-              if ((data.output) === expectedOutput){ 
-              console.log("Test Case Passed")
-              res.status(200).json((data.output))
-             }
-             else {
-              console.log("Test Case Failed")
-              res.status(202).json(data.output)
-             }
-             
-          }
-      });
-      }
-    }
-     
-    }   
+    }  
 
 try {
   const fullStatData = await new Promise((resolve) => {
@@ -216,7 +150,7 @@ console.log('All temporary files flushed !');
 // @access Private
 const showProblem = asyncHandler(async(req,res)=>{
     const {_id} = req.body
-    console.log(_id)
+   
 
     if(!_id) {
         return res.status(400).json({message : "Id is required"})
