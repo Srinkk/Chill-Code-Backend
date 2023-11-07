@@ -73,16 +73,13 @@ const runProblem = asyncHandler(async(req,res)=>{
           var envData = { OS : "windows" , cmd : "g++", options : {timeout : 10000} };
           compiler.compileCPPWithInput(envData, code, input, function(data){
               if(data.error) {
-                  console.log(data.error)
-                  return res.status(400).json({message: data.error});
+                  return res.status(400).json({error: data.error});
                 }
                 else {
-                    if ((data.output) === expectedOutput){ 
-                    console.log("Test Case Passed")
+                    if ((data.output) === expectedOutput){
                     return res.status(200).json((data.output))
                    }
                    else {
-                    console.log("Test Case Failed")
                     return res.status(202).json({output: data.output, message: 'Test Case Failed'})
                    }
                    
@@ -98,11 +95,9 @@ const runProblem = asyncHandler(async(req,res)=>{
           }
           else {
               if ((data.output) === expectedOutput){ 
-              console.log("Test Case Passed")
               return res.status(200).json((data.output))
              }
              else {
-              console.log("Test Case Failed")
               return res.status(202).json({output: data.output, message: 'Test Case Failed'})
              }
              
@@ -118,11 +113,9 @@ const runProblem = asyncHandler(async(req,res)=>{
           }
           else {
               if ((data.output) === expectedOutput){ 
-              console.log("Test Case Passed")
               return res.status(200).json((data.output))
              }
              else {
-              console.log("Test Case Failed")
               return res.status(202).json({output: data.output, message: 'Test Case Failed'})
              }
              
@@ -182,7 +175,7 @@ const createNewProblem = asyncHandler(async(req,res) => {
     const problem = await Problem.create(problemObject)
 
     if(problem) {
-        return res.status(201).json({message : `New Problem with id ${id} craeted`})
+        return res.status(201).json({message : `New Problem with id ${id} created`})
 	} else {
         return res.status(400).json({message : 'Invalid data received'})
     }
@@ -195,52 +188,47 @@ const createNewProblem = asyncHandler(async(req,res) => {
 
 const submitProblem = asyncHandler(async (req, res) => {
   const { user_id, problem_id, code, language} = req.body;
-  console.log(user_id)
-  console.log(problem_id)
-  console.log(code)
-  console.log(language)
-if (!user_id || !problem_id || !code || !language ) {
-  return res.status(400).json({ message: "All fields are required" });
-}
+
+  if (!user_id || !problem_id || !code || !language ) {
+    return res.status(400).json({ message: "All fields are required" });
+  }
 
 try {
-  const problems = await Problem.findOne({ _id: problem_id }).exec();
+  const problem = await Problem.findOne({ _id: problem_id }).exec();
   const user = await User.findOne({ _id: user_id }).exec();
   const potd = await axios.get('http://localhost:3500/problemOfTheDay')
   const potd_id = potd.data._id
   console.log("potd",potd.data)
   
-  let status;
+  let status, compileError;
+  
   const response = await axios.post('http://localhost:3500/problem/run', {
     code: code,
     language: language,
-    inputRadio: problems.inputRadio,
+    inputRadio: problem.inputRadio,
     _id: problem_id,
-  });
-
+  }).catch((error) => {
+    return res.status(400).json({error: error.response.data.error})
+  })
+  
   if (response.status === 200) {
     status = "Solved";
-    is_potd = potd_id.toString() === problems._id.toString()
+    is_potd = potd_id.toString() === problem._id.toString()
     if(is_potd)
     {
       user.streak += 1;
       console.log("Streak",user.streak)
     }
-   
     console.log("Status:", status);
-  } else {
-    status = "Tried";
-    console.log("Status:", status);
-  }
+  } 
 
-
-  const problemExists = user.solvedProblems.problems.some((problem) =>
-    problem.problemId.toString() === problems._id.toString()
+  const problemExists = user.solvedProblems.problem.some((problem) =>
+    problem.problemId.toString() === problem._id.toString()
   );
   if (problemExists) {
     
-    user.solvedProblems.problems.forEach((problem) => {
-      if (problem.problemId.toString() === problems._id.toString()) {
+    user.solvedProblems.problem.forEach((problem) => {
+      if (problem.problemId.toString() === problem._id.toString()) {
         for(const solution of problem.solution)
         {
           if(language === 'cpp')
@@ -262,42 +250,42 @@ else {
 if(language === 'cpp')
 { 
 const newProblem = {
-  problemId: problems._id,
+  problemId: problem._id,
   solution : [
    {
      "c++" : code
    }
   ]
 }
-user.solvedProblems.problems.push(newProblem);
+user.solvedProblems.problem.push(newProblem);
 }
 else if(language === 'python')
 {
   const newProblem = {
-    problemId: problems._id,
+    problemId: problem._id,
     solution : [
      {
        "python" : code
      }
     ]
   }
-  user.solvedProblems.problems.push(newProblem);
+  user.solvedProblems.problem.push(newProblem);
 }
 else {
   const newProblem = {
-    problemId: problems._id,
+    problemId: problem._id,
     solution : [
      {
        "java" : code
      }
     ]
   }
-  user.solvedProblems.problems.push(newProblem);
-  if(problems.difficulty === "Easy")
+  user.solvedProblems.problem.push(newProblem);
+  if(problem.difficulty === "Easy")
   {
     user.solvedProblems.easy++
   }
-  else if(problems.difficulty === "Medium")
+  else if(problem.difficulty === "Medium")
   {
     user.solvedProblems.medium++
   }
@@ -306,24 +294,27 @@ else {
   }
 }
 } 
-  console.log("Before submissions:", problems.submissions);
-  problems.submissions += 1;
+  console.log("Before submissions:", problem.submissions);
+  problem.submissions += 1;
   if (status === "Solved") {
-    problems.correct_submissions += 1;
-    console.log("Correct", problems.correct_submissions);
+    problem.correct_submissions += 1;
+    console.log("Correct", problem.correct_submissions);
   }
-  const accuracy =(( problems.correct_submissions/problems.submissions) * 100).toFixed(2);
-  console.log("After submissions:", problems.submissions);
+  const accuracy =(( problem.correct_submissions/problem.submissions) * 100).toFixed(2);
+  console.log("After submissions:", problem.submissions);
   console.log("Accuracy",accuracy,"%")
-  problems.accuracy = accuracy
+  problem.accuracy = accuracy
  
-  await Promise.all([user.save(), problems.save()]);
+  await Promise.all([user.save(), problem.save()]);
   
+  if (response.status === 200) {
+    return res.status(201).json({message: 'Answer accepted!'});
+  } else if (response.status === 202) {
+    return res.status(202).json(response.data)
+  }
 
-  res.status(200).json(problems);
 } catch (error) {
-  console.error(error);
-  res.status(500).json({ message: "Internal server error" });
+  return res.status(500).json({ message: "Internal server error" });
 }
 });
 
