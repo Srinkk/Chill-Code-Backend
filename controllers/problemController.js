@@ -290,7 +290,7 @@ else {
     user.solvedProblems.medium++
   }
   else {
-    user.solvedProblems.hard ++
+    user.solvedProblems.hard++
   }
 }
 } 
