@@ -14,10 +14,10 @@ const userSchema = new mongoose.Schema({
         type :String,
         required : true
     },
-    rating: {
-        type: Number,
-        required: true
-    },
+    // rating: {
+    //     type: Number,
+    //     required: true
+    // },
     solvedProblems: {
         hard: {
             type: Number,

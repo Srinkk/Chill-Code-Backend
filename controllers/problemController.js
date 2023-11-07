@@ -195,6 +195,10 @@ const createNewProblem = asyncHandler(async(req,res) => {
 
 const submitProblem = asyncHandler(async (req, res) => {
   const { user_id, problem_id, code, language} = req.body;
+  console.log(user_id)
+  console.log(problem_id)
+  console.log(code)
+  console.log(language)
 if (!user_id || !problem_id || !code || !language ) {
   return res.status(400).json({ message: "All fields are required" });
 }
