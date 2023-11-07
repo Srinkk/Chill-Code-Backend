@@ -74,12 +74,12 @@ const runProblem = asyncHandler(async(req,res)=>{
           compiler.compileCPPWithInput(envData, code, input, function(data){
               if(data.error) {
                   console.log(data.error)
-                  res.status(400).json({error: data.error});
+                  return res.status(203).json({message: data.error});
                 }
                 else {
                     if ((data.output) === expectedOutput){ 
                     console.log("Test Case Passed")
-                    res.status(200).json((data.output))
+                    return res.status(200).json((data.output))
                    }
                    else {
                     console.log("Test Case Failed")
@@ -94,7 +94,7 @@ const runProblem = asyncHandler(async(req,res)=>{
         var envData = { OS : "windows",options : {timeout : 10000}}; 
         compiler.compileJavaWithInput( envData , code , input ,  function(data){
           if(data.error) {
-            res.status(400).json({error: data.error});
+            res.status(203).json({message: data.error});
           }
           else {
               if ((data.output) === expectedOutput){ 
@@ -114,7 +114,7 @@ const runProblem = asyncHandler(async(req,res)=>{
         var envData = { OS : "windows",options : {timeout : 10000}};
         compiler.compilePythonWithInput( envData , code , input ,  function(data){
           if(data.error) {
-            res.status(400).json({error: data.error});
+            res.status(203).json({message: data.error});
           }
           else {
               if ((data.output) === expectedOutput){ 
@@ -289,14 +289,6 @@ else {
     ]
   }
   user.solvedProblems.problems.push(newProblem);
-}
-} 
-  console.log("Before submissions:", problems.submissions);
-  problems.submissions += 1;
-  if (status === "Solved") {
-    problems.correct_submissions += 1;
-    console.log("Correct", problems.correct_submissions);
-  }
   if(problems.difficulty === "Easy")
   {
     user.solvedProblems.easy++
@@ -307,6 +299,14 @@ else {
   }
   else {
     user.solvedProblems.hard ++
+  }
+}
+} 
+  console.log("Before submissions:", problems.submissions);
+  problems.submissions += 1;
+  if (status === "Solved") {
+    problems.correct_submissions += 1;
+    console.log("Correct", problems.correct_submissions);
   }
   const accuracy =(( problems.correct_submissions/problems.submissions) * 100).toFixed(2);
   console.log("After submissions:", problems.submissions);
