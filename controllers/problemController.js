@@ -83,7 +83,7 @@ const runProblem = asyncHandler(async(req,res)=>{
                    }
                    else {
                     console.log("Test Case Failed")
-                    res.status(202).json(data.output)
+                    return res.status(202).json({output: data.output, message: 'Test Case Failed'})
                    }
                    
                 }
@@ -103,7 +103,7 @@ const runProblem = asyncHandler(async(req,res)=>{
              }
              else {
               console.log("Test Case Failed")
-              res.status(202).json(data.output)
+              return res.status(202).json({output: data.output, message: 'Test Case Failed'})
              }
              
           }
@@ -123,7 +123,7 @@ const runProblem = asyncHandler(async(req,res)=>{
              }
              else {
               console.log("Test Case Failed")
-              res.status(202).json(data.output)
+              return res.status(202).json({output: data.output, message: 'Test Case Failed'})
              }
              
           }
@@ -298,7 +298,7 @@ else {
     user.solvedProblems.medium++
   }
   else {
-    user.solvedProblems.hard ++
+    user.solvedProblems.hard++
   }
 }
 } 
