@@ -74,7 +74,7 @@ const runProblem = asyncHandler(async(req,res)=>{
           compiler.compileCPPWithInput(envData, code, input, function(data){
               if(data.error) {
                   console.log(data.error)
-                  return res.status(203).json({message: data.error});
+                  return res.status(400).json({message: data.error});
                 }
                 else {
                     if ((data.output) === expectedOutput){ 
@@ -94,7 +94,7 @@ const runProblem = asyncHandler(async(req,res)=>{
         var envData = { OS : "windows",options : {timeout : 10000}}; 
         compiler.compileJavaWithInput( envData , code , input ,  function(data){
           if(data.error) {
-            res.status(203).json({message: data.error});
+            res.status(400).json({message: data.error});
           }
           else {
               if ((data.output) === expectedOutput){ 
@@ -114,7 +114,7 @@ const runProblem = asyncHandler(async(req,res)=>{
         var envData = { OS : "windows",options : {timeout : 10000}};
         compiler.compilePythonWithInput( envData , code , input ,  function(data){
           if(data.error) {
-            res.status(203).json({message: data.error});
+            res.status(400).json({message: data.error});
           }
           else {
               if ((data.output) === expectedOutput){ 
