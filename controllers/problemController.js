@@ -94,12 +94,12 @@ const runProblem = asyncHandler(async(req,res)=>{
         var envData = { OS : "windows",options : {timeout : 10000}}; 
         compiler.compileJavaWithInput( envData , code , input ,  function(data){
           if(data.error) {
-            res.status(400).json({message: data.error});
+            return res.status(400).json({error: data.error});
           }
           else {
               if ((data.output) === expectedOutput){ 
               console.log("Test Case Passed")
-              res.status(200).json((data.output))
+              return res.status(200).json((data.output))
              }
              else {
               console.log("Test Case Failed")
@@ -114,12 +114,12 @@ const runProblem = asyncHandler(async(req,res)=>{
         var envData = { OS : "windows",options : {timeout : 10000}};
         compiler.compilePythonWithInput( envData , code , input ,  function(data){
           if(data.error) {
-            res.status(400).json({message: data.error});
+            return res.status(400).json({error: data.error});
           }
           else {
               if ((data.output) === expectedOutput){ 
               console.log("Test Case Passed")
-              res.status(200).json((data.output))
+              return res.status(200).json((data.output))
              }
              else {
               console.log("Test Case Failed")
