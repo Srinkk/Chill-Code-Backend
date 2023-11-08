@@ -121,6 +121,10 @@ const createNewUser = asyncHandler(async(req,res)=>{
 // @access Private
 const editProfile = asyncHandler(async(req,res)=>{
     const { _id, e_mail, username } = req.body
+    // console.log("id",_id)
+    // console.log("e-_mail",e_mail)
+    // console.log("username",username)
+
     if(!_id || !e_mail || !username)
     {
         res.status(400).json({message : 'All fields are required'})
@@ -157,16 +161,16 @@ const getSolvedProblems = asyncHandler(async(req,res)=>{
     }
 
     const user = await User.findOne({_id:_id}).exec();
+
     const solvedProblems = []
-    for (const problem of user.problems) {
-        if(problem.status === "Solved")
-        {
+    for (const problem of user.solvedProblems.problems) {
+       
             const p_id = problem.problemId;
             const s_problem = await Problem.findOne({_id : p_id})
             solvedProblems.push(s_problem)
-        }
+        
     }
-    return res.status(200).json(solvedProblems)
+    return res.status(200).json({solvedProblem :solvedProblems, user: user})
 })
 // @desc get tried problems
 //@route POST /user/tried

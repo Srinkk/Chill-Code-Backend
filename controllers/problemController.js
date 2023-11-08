@@ -77,7 +77,7 @@ const runProblem = asyncHandler(async(req,res)=>{
                 }
                 else {
                     if ((data.output) === expectedOutput){
-                    return res.status(200).json((data.output))
+                    return res.status(200).json({output: data.output, message: 'Test Case Passed'})
                    }
                    else {
                     return res.status(202).json({output: data.output, message: 'Test Case Failed'})
@@ -95,7 +95,7 @@ const runProblem = asyncHandler(async(req,res)=>{
           }
           else {
               if ((data.output) === expectedOutput){ 
-              return res.status(200).json((data.output))
+              return res.status(200).json({output: data.output, message: 'Test Case Passed'})
              }
              else {
               return res.status(202).json({output: data.output, message: 'Test Case Failed'})
@@ -113,7 +113,7 @@ const runProblem = asyncHandler(async(req,res)=>{
           }
           else {
               if ((data.output) === expectedOutput){ 
-              return res.status(200).json((data.output))
+              return res.status(200).json({output: data.output, message: 'Test Case Passed'})
              }
              else {
               return res.status(202).json({output: data.output, message: 'Test Case Failed'})
@@ -202,45 +202,34 @@ try {
   
   let status, resStatus, resMessage, resOutput;
   
+  try{
   const response = await axios.post('http://localhost:3500/problem/run', {
     code: code,
     language: language,
     inputRadio: problem.inputRadio,
     _id: problem_id,
-  })
-  .then((res) => {
-    resStatus = res.status
-    resMessage = res.message
-    resOutput = res.output
-    if (resStatus === 200)
-      return res.status(201).json({output: resOutput, message: 'Answer Accepted!'})
-    else if (resStatus === 202) 
-      return res.status(202).json({output: resOutput, message: resMessage})
-  })
-  .catch((error) => {
-    return res.status(400).json({error: error.response.data.error})
-  })
-  
-  if (response.status === 200) {
-    status = "Solved";
-    is_potd = potd_id.toString() === problem._id.toString()
-    if(is_potd)
-    {
-      user.streak += 1;
-      console.log("Streak",user.streak)
-    }
-    console.log("Status:", status);
-  } 
+  });
 
-  const problemExists = user.solvedProblems.problem.some((problem) =>
-    problem.problemId.toString() === problem._id.toString()
+  resStatus = response.status;
+  resMessage = response.message
+  resOutput = response.data
+  console.log("message", resMessage); 
+} catch(run_err){
+  resMessage = run_err.response.data.error
+  return res.status(400).json({message : resMessage})
+}
+   // console.log("response from /run",response)`
+  const problemExists = user.solvedProblems.problems.some((prob) =>
+    prob.problemId.toString() === problem._id.toString()
   );
+ 
   if (problemExists) {
-    
-    user.solvedProblems.problem.forEach((problem) => {
-      if (problem.problemId.toString() === problem._id.toString()) {
-        for(const solution of problem.solution)
+    console.log("Found")
+    user.solvedProblems.problems.forEach((prob) => {
+      if (prob.problemId.toString() === problem._id.toString()) {
+        for(const solution of prob.solution)
         {
+          console.log("solution")
           if(language === 'cpp')
           {
             solution.cpp = code
@@ -267,7 +256,7 @@ const newProblem = {
    }
   ]
 }
-user.solvedProblems.problem.push(newProblem);
+user.solvedProblems.problems.push(newProblem);
 }
 else if(language === 'python')
 {
@@ -279,7 +268,7 @@ else if(language === 'python')
      }
     ]
   }
-  user.solvedProblems.problem.push(newProblem);
+  user.solvedProblems.problems.push(newProblem);
 }
 else {
   const newProblem = {
@@ -290,8 +279,10 @@ else {
      }
     ]
   }
-  user.solvedProblems.problem.push(newProblem);
-  if(problem.difficulty === "Easy")
+  user.solvedProblems.problems.push(newProblem);
+  
+}
+if(problem.difficulty === "Easy")
   {
     user.solvedProblems.easy++
   }
@@ -302,7 +293,6 @@ else {
   else {
     user.solvedProblems.hard++
   }
-}
 } 
   console.log("Before submissions:", problem.submissions);
   problem.submissions += 1;
@@ -314,16 +304,27 @@ else {
   console.log("After submissions:", problem.submissions);
   console.log("Accuracy",accuracy,"%")
   problem.accuracy = accuracy
+  if (resStatus === 200) {
+    status = "Solved";
+    if(!problemExists)
+    {is_potd = potd_id.toString() === problem._id.toString();
+
+    if (is_potd) {
+      user.streak += 1;
+      console.log("Streak", user.streak);}
+    }
+    console.log("Status:", status);
+  }
  
   await Promise.all([user.save(), problem.save()]);
 
-  // if (resStatus === 200)
-  //   return res.status(201).json({output: resOutput, message: resMessage})
-  // else if (resStatus === 202) 
-  //   return res.status(202).json({output: resOutput, message: resMessage})
-
+  if (resStatus === 200)
+    return res.status(201).json({output: resOutput})
+  else if (resStatus === 202) 
+    return res.status(202).json({output: resOutput, message: resMessage})
+ 
 } catch (error) {
-  return res.status(500).json({ message: "Internal server error" });
+  return res.status(500).json({ message: "Internal Server Error", error: error.message });
 }
 });
 
